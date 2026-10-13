@@ -51,5 +51,6 @@ public class AccountController {
     }
     public  void m() {
         System.out.println("hello world");
+        System.out.println(" 你好");
     }
 }
