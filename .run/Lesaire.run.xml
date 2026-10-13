@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="莱赛尔餐饮服装定制平台" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.lesaire.LesaireApplication" />
+    <module name="lesaire-platform" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

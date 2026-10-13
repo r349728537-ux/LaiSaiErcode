@@ -1,0 +1,38 @@
+# 本地运行入口仅监听回环地址，完整应用使用 8080 端口。
+server:
+  address: 127.0.0.1
+  port: 8080
+spring:
+  config:
+# 加载本地 JWT 密钥，也可通过 JWT_SECRET 设置；源码中不保存密钥。
+    import: optional:file:./.local/jwt.properties
+  application:
+    name: lesaire
+# 默认使用现有 MySQL 数据库，离线演示可显式选择 h2。
+  profiles:
+    default: mysql
+# 公共配置禁用自动建表，h2 配置单独启用独立演示库初始化。
+  sql:
+    init:
+      mode: never
+  jackson:
+    time-zone: Asia/Shanghai
+# 容器先限制上传大小，存储层还会校验图片格式和像素尺寸。
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+# 演示账号、上传目录和令牌参数可通过对应环境变量配置。
+lesaire:
+  demo-accounts: ${DEMO_ACCOUNTS:true}
+  uploads:
+    directory: ${UPLOAD_DIRECTORY:.local/uploads/styles}
+  jwt:
+    secret: ${JWT_SECRET:}
+    ttl-seconds: ${JWT_TTL_SECONDS:7200}
+# 加载 Mapper XML，并把一级缓存限制为单条语句范围。
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    local-cache-scope: STATEMENT

@@ -1,0 +1,694 @@
+{
+  "verifiedAt": "2026-10-13T05:24:38.084Z",
+  "baseUrl": "http://127.0.0.1:8080",
+  "verification": "本地HTTP实测，执行导入文件中的请求、变量提取与相同pm脚本；非Apifox桌面软件导入验收。",
+  "requests": 39,
+  "passed": 39,
+  "assertionCount": 83,
+  "completedAll": true,
+  "results": [
+    {
+      "name": "01 读取目录并保存款式面料变量",
+      "method": "GET",
+      "path": "/api/catalog",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "目录含制服和面料",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "02 普通用户登录：自动保存 userToken",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "返回 Bearer 类型",
+          "passed": true
+        },
+        {
+          "name": "账号角色正确",
+          "passed": true
+        },
+        {
+          "name": "返回三段 JWT",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "03 管理员登录：自动保存 adminToken",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "返回 Bearer 类型",
+          "passed": true
+        },
+        {
+          "name": "账号角色正确",
+          "passed": true
+        },
+        {
+          "name": "返回三段 JWT",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "04 获取当前用户资料",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "当前用户为普通用户",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "05 查询我的订单：第一页",
+      "method": "GET",
+      "path": "/api/orders?page=0",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "页码从零开始",
+          "passed": true
+        },
+        {
+          "name": "返回订单数组",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "06 正常报价：长衣长、刺绣、两件",
+      "method": "POST",
+      "path": "/api/quotes",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "报价数量为两件",
+          "passed": true
+        },
+        {
+          "name": "按真实目录价格计算总价",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "07 未携带 JWT 获取资料：401",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 401,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 401",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "08 错误密码登录：401",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 401",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "09 普通用户访问管理员订单：403",
+      "method": "GET",
+      "path": "/api/admin/orders?page=0",
+      "status": 403,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 403",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "10 无效 JWT 获取资料：401",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 401,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 401",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "11 数量超出1至5：400",
+      "method": "POST",
+      "path": "/api/quotes",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "12 面料与颜色不匹配：400",
+      "method": "POST",
+      "path": "/api/quotes",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "13 量体尺寸越界：400",
+      "method": "PUT",
+      "path": "/api/account/measurements",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "14 页码为负数：400",
+      "method": "GET",
+      "path": "/api/orders?page=-1",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "15 提交新订单：自动保存 orderId",
+      "method": "POST",
+      "path": "/api/orders",
+      "status": 201,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 201",
+          "passed": true
+        },
+        {
+          "name": "新订单待确认",
+          "passed": true
+        },
+        {
+          "name": "下单由后端重新计算总价",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "16 相同请求标识重复下单：返回同一订单",
+      "method": "POST",
+      "path": "/api/orders",
+      "status": 201,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 201",
+          "passed": true
+        },
+        {
+          "name": "重复请求返回相同订单ID",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "17 普通用户调用管理员状态接口：403",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 403,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 403",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "18 用户提前确认收货：400",
+      "method": "PATCH",
+      "path": "/api/orders/20/status",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "19 管理员跳过裁剪缝制：400",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "20 管理员查看全部订单",
+      "method": "GET",
+      "path": "/api/admin/orders?page=0",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "包含刚创建的订单",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "21 管理员按顺序推进：CUTTING",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单状态正确更新",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "22 管理员按顺序推进：SEWING",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单状态正确更新",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "23 管理员按顺序推进：QUALITY",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单状态正确更新",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "24 管理员按顺序推进：SHIPPED",
+      "method": "PATCH",
+      "path": "/api/admin/orders/20/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单状态正确更新",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "25 用户确认收货：COMPLETED",
+      "method": "PATCH",
+      "path": "/api/orders/20/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单完成",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "26 已完成订单重复收货：400",
+      "method": "PATCH",
+      "path": "/api/orders/20/status",
+      "status": 400,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 400",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "27 创建用于取消的待确认订单",
+      "method": "POST",
+      "path": "/api/orders",
+      "status": 201,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 201",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "28 用户取消自己的待确认订单",
+      "method": "PATCH",
+      "path": "/api/orders/21/status",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "订单已取消",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "29 注册新用户：自动生成手机号",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 201,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 201",
+          "passed": true
+        },
+        {
+          "name": "注册账号为普通用户",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "30 相同手机号重复注册：409",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 409,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 409",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "31 新用户登录：自动保存 otherUserToken",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "返回 Bearer 类型",
+          "passed": true
+        },
+        {
+          "name": "账号角色正确",
+          "passed": true
+        },
+        {
+          "name": "返回三段 JWT",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "32 新用户操作他人订单：404",
+      "method": "PATCH",
+      "path": "/api/orders/20/status",
+      "status": 404,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 404",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "33 保存新用户量体：两位小数",
+      "method": "PUT",
+      "path": "/api/account/measurements",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "量体保存两位小数",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "34 重新读取资料：量体持久化",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        },
+        {
+          "name": "重新查询身高为172.25",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "35 新用户退出：撤销 JWT",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "36 新用户退出后旧 JWT：401",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 401,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 401",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "37 普通用户退出",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "38 普通用户退出后旧 JWT：401",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 401,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 401",
+          "passed": true
+        },
+        {
+          "name": "返回错误提示 message",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "39 管理员退出",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "passed": true,
+      "assertions": [
+        {
+          "name": "HTTP 状态为 200",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

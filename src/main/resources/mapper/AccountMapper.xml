@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace 对应 AccountMapper 接口，语句 id 对应接口方法名；参数统一使用绑定占位符。 -->
+<mapper namespace="com.lesaire.mapper.AccountMapper">
+  <!-- 将 app_user 的下划线字段映射为账号实体属性。 -->
+  <resultMap id="Account" type="com.lesaire.pojo.Account">
+    <id property="id" column="id"/>
+    <result property="username" column="username"/>
+    <result property="passwordHash" column="password_hash"/>
+    <result property="displayName" column="full_name"/>
+    <result property="phone" column="mobile"/>
+    <result property="role" column="role"/>
+    <result property="enabled" column="enabled"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+  <!-- 量体档案的字段映射，与用户账号分别保存。 -->
+  <resultMap id="Measurement" type="com.lesaire.pojo.CustomerMeasurement">
+    <id property="id" column="id"/>
+    <result property="customerId" column="customer_id"/>
+    <result property="height" column="height"/>
+    <result property="chest" column="chest"/>
+    <result property="waist" column="waist"/>
+    <result property="hip" column="hip"/>
+    <result property="shoulder" column="shoulder"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+  <!-- 通过 measurement_ 列别名加载关联档案；档案 ID 为空时不创建关联对象。 -->
+  <resultMap id="AccountWithMeasurement" type="com.lesaire.pojo.Account" extends="Account">
+    <association property="measurement" resultMap="Measurement" columnPrefix="measurement_" notNullColumn="id"/>
+  </resultMap>
+  <!-- 账号与量体档案共用查询片段，左连接允许用户尚未填写尺寸。 -->
+  <sql id="SelectUser">
+    SELECT u.id,u.username,u.password_hash,u.full_name,u.mobile,u.role,u.enabled,u.created_at,u.updated_at,
+           m.id AS measurement_id,m.customer_id AS measurement_customer_id,m.height AS measurement_height,
+           m.chest AS measurement_chest,m.waist AS measurement_waist,m.hip AS measurement_hip,
+           m.shoulder AS measurement_shoulder,m.updated_at AS measurement_updated_at
+    FROM app_user u LEFT JOIN customer_measurement m ON m.customer_id=u.id
+  </sql>
+  <select id="findByUsername" resultMap="AccountWithMeasurement"><include refid="SelectUser"/> WHERE u.username=#{username}</select>
+  <!-- 已有数据手机号可能重复，按账号 ID 返回第一条匹配记录。 -->
+  <select id="findFirstByPhone" resultMap="AccountWithMeasurement"><include refid="SelectUser"/> WHERE u.mobile=#{phone} ORDER BY u.id LIMIT 1</select>
+  <select id="findById" resultMap="AccountWithMeasurement"><include refid="SelectUser"/> WHERE u.id=#{id}</select>
+  <!-- 在业务事务中锁定用户行，控制同一用户的并发下单。 -->
+  <select id="findForUpdate" resultMap="Account">
+    SELECT id,username,password_hash,full_name,mobile,role,enabled,created_at,updated_at FROM app_user WHERE id=#{id} FOR UPDATE
+  </select>
+  <select id="existsByUsername" resultType="boolean">SELECT COUNT(*) &gt; 0 FROM app_user WHERE username=#{username}</select>
+  <select id="existsByPhone" resultType="boolean">SELECT COUNT(*) &gt; 0 FROM app_user WHERE mobile=#{phone}</select>
+  <!-- 插入账号后用数据库自增主键回填实体 id。 -->
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO app_user(username,password_hash,full_name,mobile,role,enabled)
+    VALUES(#{username},#{passwordHash},#{displayName},#{phone},#{role},#{enabled})
+  </insert>
+  <!-- 依据 customer_id 唯一约束新增或更新五项尺寸，保留其他已有量体字段。 -->
+  <insert id="saveMeasurement" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO customer_measurement(customer_id,height,chest,waist,hip,shoulder,updated_at)
+    VALUES(#{customerId},#{height},#{chest},#{waist},#{hip},#{shoulder},CURRENT_TIMESTAMP)
+    ON DUPLICATE KEY UPDATE height=#{height},chest=#{chest},waist=#{waist},hip=#{hip},shoulder=#{shoulder},updated_at=CURRENT_TIMESTAMP
+  </insert>
+</mapper>

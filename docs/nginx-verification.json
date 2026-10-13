@@ -1,0 +1,76 @@
+{
+  "verifiedAt": "2026-10-13T06:00:15.861Z",
+  "proxy": "http://localhost",
+  "upstream": "http://127.0.0.1:8080",
+  "requests": 22,
+  "checks": 16,
+  "passed": 16,
+  "completedAll": true,
+  "scope": "本机真实 HTTP 对比；只登录/退出和提交无效图片，不创建账号/订单、不更新尺寸或有效图片。",
+  "results": [
+    {
+      "name": "80 与 8080 首页 HTML 完全一致",
+      "passed": true
+    },
+    {
+      "name": "http://127.0.0.1 回环地址首页可访问",
+      "passed": true
+    },
+    {
+      "name": "http://[::1] 回环地址首页可访问",
+      "passed": true
+    },
+    {
+      "name": "静态资源一致：/assets/index-D521Fp1q.js",
+      "passed": true
+    },
+    {
+      "name": "静态资源一致：/assets/index-DfOodRua.css",
+      "passed": true
+    },
+    {
+      "name": "目录接口 JSON 一致，保留 /api 前缀",
+      "passed": true
+    },
+    {
+      "name": "匿名访问订单仍返回 401",
+      "passed": true
+    },
+    {
+      "name": "普通用户通过代理登录",
+      "passed": true
+    },
+    {
+      "name": "Bearer 令牌通过代理到达登录拦截器",
+      "passed": true
+    },
+    {
+      "name": "普通用户仍不能读取管理员订单：403",
+      "passed": true
+    },
+    {
+      "name": "管理员通过代理登录",
+      "passed": true
+    },
+    {
+      "name": "管理员订单读取通过代理：200",
+      "passed": true
+    },
+    {
+      "name": "不存在的公开图片返回相同的 404 JSON",
+      "passed": true
+    },
+    {
+      "name": "2 MiB multipart 无效图片保持 400，款式图片地址未改变",
+      "passed": true
+    },
+    {
+      "name": "CUSTOMER 测试登录已退出",
+      "passed": true
+    },
+    {
+      "name": "ADMIN 测试登录已退出",
+      "passed": true
+    }
+  ]
+}

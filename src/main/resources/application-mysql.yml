@@ -1,0 +1,16 @@
+# MySQL 环境连接配置，使用已有表结构。
+spring:
+  config:
+# 本机连接信息放在未纳入版本控制的 .local/mysql.properties 中。
+    import: optional:file:./.local/mysql.properties
+# 未提供本地覆盖配置时，使用环境变量及其默认值连接数据库。
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/lyocell_uniform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+# 复用数据库连接，限制池大小，并设置获取连接的等待时间。
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000

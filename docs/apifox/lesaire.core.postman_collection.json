@@ -1,0 +1,1740 @@
+{
+  "info": {
+    "_postman_id": "6415878d-fba7-4d77-a68b-e9ab33194cd4",
+    "name": "莱赛尔餐饮服装定制—核心接口测试",
+    "description": "当前精简版的39个按序请求。先选择本地环境，再从01到39执行。成功登录后自动保存JWT，创建订单后自动保存ID和requestKey。一次完整运行新增一个测试用户、一个完成订单和一个取消订单，均标明Apifox接口验收。图片另存手动集合，不混入批量测试。重启服务后从01重新执行。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080",
+      "type": "string"
+    },
+    {
+      "key": "userUsername",
+      "value": "lesaire_demo",
+      "type": "string"
+    },
+    {
+      "key": "userPassword",
+      "value": "Lyocell123!",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "lesaire_admin",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123!",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otherUserToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "imageAdminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "RS-CF-001",
+      "type": "string"
+    },
+    {
+      "key": "fabricId",
+      "value": "LY-BL-002",
+      "type": "string"
+    },
+    {
+      "key": "colorId",
+      "value": "hex_193a5b",
+      "type": "string"
+    },
+    {
+      "key": "wrongColorId",
+      "value": "hex_f7f2e8",
+      "type": "string"
+    },
+    {
+      "key": "expectedTotal",
+      "value": "572",
+      "type": "string"
+    },
+    {
+      "key": "requestKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelRequestKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelOrderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderNumber",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrationPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrationPassword",
+      "value": "Apifox123!",
+      "type": "string"
+    },
+    {
+      "key": "styleCode",
+      "value": "RS-CF-001",
+      "type": "string"
+    },
+    {
+      "key": "imageUrl",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 准备：目录和两种身份登录",
+      "item": [
+        {
+          "name": "01 读取目录并保存款式面料变量",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/catalog",
+            "description": "读取真实目录，自动保存产品、面料、匹配颜色、报价期望值和图片上传款式。每次完整测试都从本请求开始。\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "",
+                  "var data = pm.response.json();",
+                  "pm.test('目录含制服和面料', function () { pm.expect(data.products.length > 0 && data.fabrics.length > 0).to.equal(true); });",
+                  "if (data.products.length && data.fabrics.length) {",
+                  "  var product = data.products[0];",
+                  "  var fabric = data.fabrics[1] || data.fabrics[0];",
+                  "  var another = data.colors.find(function (color) { return color.id !== fabric.colorId; });",
+                  "  pm.environment.set('productId', product.id);",
+                  "  pm.environment.set('styleCode', product.id);",
+                  "  pm.environment.set('fabricId', fabric.id);",
+                  "  pm.environment.set('colorId', fabric.colorId);",
+                  "  pm.environment.set('wrongColorId', another ? another.id : 'wrong-color');",
+                  "  pm.environment.set('expectedTotal', (Number(product.basePrice) + Number(fabric.surcharge) + Number(data.optionPrices.longPrice) + Number(data.optionPrices.embroideryPrice)) * 2);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "02 普通用户登录：自动保存 userToken",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "02 普通用户登录：自动保存 userToken\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userUsername}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset('userToken');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "",
+                  "var data = pm.response.json();",
+                  "pm.test(\"返回 Bearer 类型\", function () { pm.expect(data.tokenType).to.equal('Bearer'); });",
+                  "pm.test(\"账号角色正确\", function () { pm.expect(data.account.role).to.equal(\"CUSTOMER\"); });",
+                  "pm.test('返回三段 JWT', function () { pm.expect(data.token).to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/); });",
+                  "if (pm.response.code === 200 && data.token) pm.environment.set('userToken', data.token);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "03 管理员登录：自动保存 adminToken",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "03 管理员登录：自动保存 adminToken\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset('adminToken');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "",
+                  "var data = pm.response.json();",
+                  "pm.test(\"返回 Bearer 类型\", function () { pm.expect(data.tokenType).to.equal('Bearer'); });",
+                  "pm.test(\"账号角色正确\", function () { pm.expect(data.account.role).to.equal(\"ADMIN\"); });",
+                  "pm.test('返回三段 JWT', function () { pm.expect(data.token).to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/); });",
+                  "if (pm.response.code === 200 && data.token) pm.environment.set('adminToken', data.token);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 基础查询、报价和错误校验",
+      "item": [
+        {
+          "name": "04 获取当前用户资料",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "04 获取当前用户资料\n\n预期 HTTP 200。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"当前用户为普通用户\", function () { pm.expect(pm.response.json().role).to.equal('CUSTOMER'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "05 查询我的订单：第一页",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders?page=0",
+            "description": "05 查询我的订单：第一页\n\n预期 HTTP 200。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"页码从零开始\", function () { pm.expect(pm.response.json().page).to.equal(0); });",
+                  "pm.test('返回订单数组', function () { pm.expect(pm.response.json().items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "06 正常报价：长衣长、刺绣、两件",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quotes",
+            "description": "报价公开访问。单价=款式基础价+面料加价+衣长加价+刺绣加价；总价=单价×2。neckline为兼容必填字段，当前衬衫不参与计价。\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"fabricId\": \"{{fabricId}}\",\n  \"colorId\": \"{{colorId}}\",\n  \"fit\": \"regular\",\n  \"length\": \"long\",\n  \"embroidery\": true,\n  \"neckline\": \"round\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"报价数量为两件\", function () { pm.expect(pm.response.json().quantity).to.equal(2); });",
+                  "pm.test(\"按真实目录价格计算总价\", function () { pm.expect(Number(pm.response.json().total)).to.equal(Number(pm.environment.get('expectedTotal'))); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "07 未携带 JWT 获取资料：401",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "07 未携带 JWT 获取资料：401\n\n预期 HTTP 401。认证：无需登录或本用例刻意不提供有效令牌。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 401\", function () { pm.expect(pm.response.code).to.equal(401); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "08 错误密码登录：401",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "08 错误密码登录：401\n\n预期 HTTP 401。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{userUsername}}\",\n  \"password\": \"DefinitelyWrong123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 401\", function () { pm.expect(pm.response.code).to.equal(401); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "09 普通用户访问管理员订单：403",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders?page=0",
+            "description": "09 普通用户访问管理员订单：403\n\n预期 HTTP 403。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 403\", function () { pm.expect(pm.response.code).to.equal(403); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "10 无效 JWT 获取资料：401",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.jwt.token",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "10 无效 JWT 获取资料：401\n\n预期 HTTP 401。认证：无需登录或本用例刻意不提供有效令牌。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 401\", function () { pm.expect(pm.response.code).to.equal(401); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "11 数量超出1至5：400",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quotes",
+            "description": "11 数量超出1至5：400\n\n预期 HTTP 400。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"fabricId\": \"{{fabricId}}\",\n  \"colorId\": \"{{colorId}}\",\n  \"fit\": \"regular\",\n  \"length\": \"long\",\n  \"embroidery\": true,\n  \"neckline\": \"round\",\n  \"quantity\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "12 面料与颜色不匹配：400",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quotes",
+            "description": "12 面料与颜色不匹配：400\n\n预期 HTTP 400。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"fabricId\": \"{{fabricId}}\",\n  \"colorId\": \"{{wrongColorId}}\",\n  \"fit\": \"regular\",\n  \"length\": \"long\",\n  \"embroidery\": true,\n  \"neckline\": \"round\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "13 量体尺寸越界：400",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/account/measurements",
+            "description": "无效尺寸会被拒绝，不修改用户档案。\n\n预期 HTTP 400。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"height\": 99,\n  \"chest\": 92,\n  \"waist\": 76,\n  \"hip\": 96,\n  \"shoulder\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "14 页码为负数：400",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders?page=-1",
+            "description": "14 页码为负数：400\n\n预期 HTTP 400。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 下单、幂等和完整制作流程",
+      "item": [
+        {
+          "name": "15 提交新订单：自动保存 orderId",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "description": "每次点击本请求都会生成新的请求标识并新增一条注明Apifox接口验收的订单；重复提交测试请使用下一条请求。\n\n预期 HTTP 201。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customization\": {\n    \"productId\": \"{{productId}}\",\n    \"fabricId\": \"{{fabricId}}\",\n    \"colorId\": \"{{colorId}}\",\n    \"fit\": \"regular\",\n    \"length\": \"long\",\n    \"embroidery\": true,\n    \"neckline\": \"round\",\n    \"quantity\": 2\n  },\n  \"measurements\": {\n    \"height\": 172.25,\n    \"chest\": 92,\n    \"waist\": 76,\n    \"hip\": 96,\n    \"shoulder\": 42\n  },\n  \"recipient\": \"Apifox接口验收\",\n  \"phone\": \"13800138000\",\n  \"address\": \"上海市徐汇区莱赛尔路88号（Apifox接口验收）\",\n  \"note\": \"Apifox接口测试订单，无需实际制作\",\n  \"requestKey\": \"{{requestKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('requestKey', 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));",
+                  "pm.environment.unset('orderId');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "var data = pm.response.json();",
+                  "pm.test(\"新订单待确认\", function () { pm.expect(data.status).to.equal('PENDING'); });",
+                  "pm.test(\"下单由后端重新计算总价\", function () { pm.expect(Number(data.total)).to.equal(Number(pm.environment.get('expectedTotal'))); });",
+                  "if (pm.response.code === 201) { pm.environment.set('orderId', data.id); pm.environment.set('orderNumber', data.orderNumber); }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "16 相同请求标识重复下单：返回同一订单",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "description": "复用上条请求的requestKey，不生成第二条订单；HTTP依然201。\n\n预期 HTTP 201。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customization\": {\n    \"productId\": \"{{productId}}\",\n    \"fabricId\": \"{{fabricId}}\",\n    \"colorId\": \"{{colorId}}\",\n    \"fit\": \"regular\",\n    \"length\": \"long\",\n    \"embroidery\": true,\n    \"neckline\": \"round\",\n    \"quantity\": 2\n  },\n  \"measurements\": {\n    \"height\": 172.25,\n    \"chest\": 92,\n    \"waist\": 76,\n    \"hip\": 96,\n    \"shoulder\": 42\n  },\n  \"recipient\": \"Apifox接口验收\",\n  \"phone\": \"13800138000\",\n  \"address\": \"上海市徐汇区莱赛尔路88号（Apifox接口验收）\",\n  \"note\": \"Apifox接口测试订单，无需实际制作\",\n  \"requestKey\": \"{{requestKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "pm.test(\"重复请求返回相同订单ID\", function () { pm.expect(String(pm.response.json().id)).to.equal(String(pm.environment.get('orderId'))); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "17 普通用户调用管理员状态接口：403",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "17 普通用户调用管理员状态接口：403\n\n预期 HTTP 403。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CUTTING\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 403\", function () { pm.expect(pm.response.code).to.equal(403); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "18 用户提前确认收货：400",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+            "description": "18 用户提前确认收货：400\n\n预期 HTTP 400。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "19 管理员跳过裁剪缝制：400",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "19 管理员跳过裁剪缝制：400\n\n预期 HTTP 400。认证：Bearer {{adminToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"QUALITY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "20 管理员查看全部订单",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders?page=0",
+            "description": "20 管理员查看全部订单\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test('包含刚创建的订单', function () { pm.expect(pm.response.json().items.some(function (row) { return String(row.id) === String(pm.environment.get('orderId')); })).to.equal(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "21 管理员按顺序推进：CUTTING",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "21 管理员按顺序推进：CUTTING\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CUTTING\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单状态正确更新\", function () { pm.expect(pm.response.json().status).to.equal(\"CUTTING\"); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "22 管理员按顺序推进：SEWING",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "22 管理员按顺序推进：SEWING\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SEWING\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单状态正确更新\", function () { pm.expect(pm.response.json().status).to.equal(\"SEWING\"); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "23 管理员按顺序推进：QUALITY",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "23 管理员按顺序推进：QUALITY\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"QUALITY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单状态正确更新\", function () { pm.expect(pm.response.json().status).to.equal(\"QUALITY\"); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "24 管理员按顺序推进：SHIPPED",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/orders/{{orderId}}/status",
+            "description": "24 管理员按顺序推进：SHIPPED\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单状态正确更新\", function () { pm.expect(pm.response.json().status).to.equal(\"SHIPPED\"); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "25 用户确认收货：COMPLETED",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+            "description": "25 用户确认收货：COMPLETED\n\n预期 HTTP 200。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单完成\", function () { pm.expect(pm.response.json().status).to.equal('COMPLETED'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "26 已完成订单重复收货：400",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+            "description": "26 已完成订单重复收货：400\n\n预期 HTTP 400。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 400\", function () { pm.expect(pm.response.code).to.equal(400); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 单独验证取消订单",
+      "item": [
+        {
+          "name": "27 创建用于取消的待确认订单",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "description": "27 创建用于取消的待确认订单\n\n预期 HTTP 201。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customization\": {\n    \"productId\": \"{{productId}}\",\n    \"fabricId\": \"{{fabricId}}\",\n    \"colorId\": \"{{colorId}}\",\n    \"fit\": \"regular\",\n    \"length\": \"long\",\n    \"embroidery\": true,\n    \"neckline\": \"round\",\n    \"quantity\": 2\n  },\n  \"measurements\": {\n    \"height\": 172.25,\n    \"chest\": 92,\n    \"waist\": 76,\n    \"hip\": 96,\n    \"shoulder\": 42\n  },\n  \"recipient\": \"Apifox接口验收\",\n  \"phone\": \"13800138000\",\n  \"address\": \"上海市徐汇区莱赛尔路88号（Apifox接口验收）\",\n  \"note\": \"Apifox接口测试订单，无需实际制作\",\n  \"requestKey\": \"{{cancelRequestKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('cancelRequestKey', 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));",
+                  "pm.environment.unset('cancelOrderId');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "if (pm.response.code === 201) pm.environment.set('cancelOrderId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "28 用户取消自己的待确认订单",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{cancelOrderId}}/status",
+            "description": "28 用户取消自己的待确认订单\n\n预期 HTTP 200。认证：Bearer {{userToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"订单已取消\", function () { pm.expect(pm.response.json().status).to.equal('CANCELLED'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 新用户、量体、订单归属与退出",
+      "item": [
+        {
+          "name": "29 注册新用户：自动生成手机号",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "每次执行新建一个测试用户；注册只返回账号资料，不返回JWT，需要执行第31条登录。\n\n预期 HTTP 201。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{registrationPhone}}\",\n  \"password\": \"{{registrationPassword}}\",\n  \"displayName\": \"Apifox接口验收用户\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('registrationPhone', '13' + String(Date.now()).slice(-9));",
+                  "pm.environment.unset('otherUserToken');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "pm.test(\"注册账号为普通用户\", function () { pm.expect(pm.response.json().role).to.equal('CUSTOMER'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "30 相同手机号重复注册：409",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "30 相同手机号重复注册：409\n\n预期 HTTP 409。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{registrationPhone}}\",\n  \"password\": \"{{registrationPassword}}\",\n  \"displayName\": \"Apifox接口验收用户\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 409\", function () { pm.expect(pm.response.code).to.equal(409); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "31 新用户登录：自动保存 otherUserToken",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "31 新用户登录：自动保存 otherUserToken\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{registrationPhone}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "",
+                  "var data = pm.response.json();",
+                  "pm.test(\"返回 Bearer 类型\", function () { pm.expect(data.tokenType).to.equal('Bearer'); });",
+                  "pm.test(\"账号角色正确\", function () { pm.expect(data.account.role).to.equal(\"CUSTOMER\"); });",
+                  "pm.test('返回三段 JWT', function () { pm.expect(data.token).to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/); });",
+                  "if (pm.response.code === 200 && data.token) pm.environment.set('otherUserToken', data.token);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "32 新用户操作他人订单：404",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherUserToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+            "description": "订单归属检查返回404，避免泄露他人订单；不是403。\n\n预期 HTTP 404。认证：Bearer {{otherUserToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 404\", function () { pm.expect(pm.response.code).to.equal(404); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "33 保存新用户量体：两位小数",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherUserToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/account/measurements",
+            "description": "33 保存新用户量体：两位小数\n\n预期 HTTP 200。认证：Bearer {{otherUserToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"height\": 172.25,\n  \"chest\": 92,\n  \"waist\": 76,\n  \"hip\": 96,\n  \"shoulder\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"量体保存两位小数\", function () { pm.expect(Number(pm.response.json().measurements.height)).to.equal(172.25); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "34 重新读取资料：量体持久化",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherUserToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "34 重新读取资料：量体持久化\n\n预期 HTTP 200。认证：Bearer {{otherUserToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"重新查询身高为172.25\", function () { pm.expect(Number(pm.response.json().measurements.height)).to.equal(172.25); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "35 新用户退出：撤销 JWT",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherUserToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "35 新用户退出：撤销 JWT\n\n预期 HTTP 200。认证：Bearer {{otherUserToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "36 新用户退出后旧 JWT：401",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{otherUserToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "保留刚退出的令牌变量来验证撤销，期望401。\n\n预期 HTTP 401。认证：Bearer {{otherUserToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 401\", function () { pm.expect(pm.response.code).to.equal(401); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 结束测试：退出演示账号",
+      "item": [
+        {
+          "name": "37 普通用户退出",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "37 普通用户退出\n\n预期 HTTP 200。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "38 普通用户退出后旧 JWT：401",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "38 普通用户退出后旧 JWT：401\n\n预期 HTTP 401。认证：Bearer {{userToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 401\", function () { pm.expect(pm.response.code).to.equal(401); });",
+                  "pm.test('返回错误提示 message', function () { pm.expect(pm.response.json().message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "39 管理员退出",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "39 管理员退出\n\n预期 HTTP 200。认证：Bearer {{adminToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

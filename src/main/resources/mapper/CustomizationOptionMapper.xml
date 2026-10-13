@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 定制选项 SQL 映射，目录选项加价由服务端读取。 -->
+<mapper namespace="com.lesaire.mapper.CustomizationOptionMapper">
+  <!-- 将 option_group、option_value、price_delta 等列映射为选项实体。 -->
+  <resultMap id="Option" type="com.lesaire.pojo.CustomizationOption">
+    <id property="id" column="id"/>
+    <result property="code" column="option_code"/><result property="group" column="option_group"/>
+    <result property="name" column="option_name"/><result property="value" column="option_value"/>
+    <result property="priceDelta" column="price_delta"/><result property="sortOrder" column="sort_order"/>
+    <result property="active" column="active"/>
+  </resultMap>
+  <!-- 只返回当前启用的选项，防止停用选项用于新的报价或下单。 -->
+  <select id="findActiveByCode" resultMap="Option">
+    SELECT id,option_code,option_group,option_name,option_value,price_delta,sort_order,active FROM customization_option WHERE option_code=#{code} AND active=1
+  </select>
+  <select id="existsByCode" resultType="boolean">SELECT COUNT(*) &gt; 0 FROM customization_option WHERE option_code=#{code}</select>
+  <!-- 初始化缺失选项，并回填数据库生成的主键。 -->
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO customization_option(option_code,option_group,option_name,option_value,price_delta,sort_order,active)
+    VALUES(#{code},#{group},#{name},#{value},#{priceDelta},#{sortOrder},#{active})
+  </insert>
+</mapper>

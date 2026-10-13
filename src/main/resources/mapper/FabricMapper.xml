@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 面料 SQL 映射，配色、克重、库存和定制加价分别读取。 -->
+<mapper namespace="com.lesaire.mapper.FabricMapper">
+  <!-- extra_price 对应单件加价 surcharge，weight_gsm 对应面料克重。 -->
+  <resultMap id="Fabric" type="com.lesaire.pojo.FabricMaterial">
+    <id property="id" column="id"/>
+    <result property="code" column="fabric_code"/><result property="name" column="fabric_name"/>
+    <result property="composition" column="composition"/><result property="colorName" column="color_name"/>
+    <result property="colorHex" column="color_hex"/><result property="weight" column="weight_gsm"/>
+    <result property="stockMeters" column="stock_meters"/><result property="surcharge" column="extra_price"/>
+    <result property="active" column="active"/>
+  </resultMap>
+  <!-- 显式列出目录需要的字段，供面料列表和单条查询复用。 -->
+  <sql id="Columns">id,fabric_code,fabric_name,composition,color_name,color_hex,weight_gsm,stock_meters,extra_price,active</sql>
+  <!-- 只显示启用面料，并按 ID 提供稳定顺序。 -->
+  <select id="findActive" resultMap="Fabric">SELECT <include refid="Columns"/> FROM fabric WHERE active=1 ORDER BY id</select>
+  <select id="findActiveByCode" resultMap="Fabric">SELECT <include refid="Columns"/> FROM fabric WHERE fabric_code=#{code} AND active=1</select>
+  <select id="count" resultType="long">SELECT COUNT(*) FROM fabric</select>
+  <!-- 为空目录写入演示面料，插入后回填主键。 -->
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO fabric(fabric_code,fabric_name,composition,color_name,color_hex,weight_gsm,stock_meters,extra_price,active)
+    VALUES(#{code},#{name},#{composition},#{colorName},#{colorHex},#{weight},#{stockMeters},#{surcharge},#{active})
+  </insert>
+</mapper>

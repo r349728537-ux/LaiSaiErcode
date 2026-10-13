@@ -1,0 +1,12 @@
+# 离线演示环境使用独立 H2 文件库，启用 MySQL 兼容模式。
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/lesaire-demo;MODE=MySQL;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+# 只在 h2 环境执行此建表脚本，避免影响现有 MySQL 数据。
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/h2-schema.sql

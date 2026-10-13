@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 款式 SQL 映射，业务编码与数据库主键承担不同用途。 -->
+<mapper namespace="com.lesaire.mapper.ShirtStyleMapper">
+  <!-- 映射款式价格、场景、真实图片和 SVG 预览特征。 -->
+  <resultMap id="Style" type="com.lesaire.pojo.ShirtStyle">
+    <id property="id" column="id"/>
+    <result property="code" column="style_code"/><result property="name" column="style_name"/>
+    <result property="scene" column="restaurant_scene"/><result property="description" column="description"/>
+    <result property="collarType" column="collar_type"/><result property="sleeveType" column="sleeve_type"/>
+    <result property="fitType" column="fit_type"/><result property="basePrice" column="base_price"/>
+    <result property="imageUrl" column="image_url"/>
+    <result property="active" column="active"/>
+  </resultMap>
+  <!-- 统一款式查询字段，避免列表和单条读取遗漏图片地址。 -->
+  <sql id="Columns">id,style_code,style_name,restaurant_scene,description,collar_type,sleeve_type,fit_type,base_price,image_url,active</sql>
+  <!-- 启用款式按 ID 排序，供目录和定制表单使用。 -->
+  <select id="findActive" resultMap="Style">SELECT <include refid="Columns"/> FROM shirt_style WHERE active=1 ORDER BY id</select>
+  <select id="findActiveByCode" resultMap="Style">SELECT <include refid="Columns"/> FROM shirt_style WHERE style_code=#{code} AND active=1</select>
+  <select id="count" resultType="long">SELECT COUNT(*) FROM shirt_style</select>
+  <!-- 限定业务编码且要求款式仍启用；业务层检查受影响行数以识别并发停用。 -->
+  <update id="updateImageUrl">
+    UPDATE shirt_style SET image_url=#{imageUrl},updated_at=CURRENT_TIMESTAMP
+    WHERE style_code=#{code} AND active=1
+  </update>
+  <!-- 保存空目录的演示款式，并回填自增主键。 -->
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO shirt_style(style_code,style_name,restaurant_scene,description,collar_type,sleeve_type,fit_type,base_price,active)
+    VALUES(#{code},#{name},#{scene},#{description},#{collarType},#{sleeveType},#{fitType},#{basePrice},#{active})
+  </insert>
+</mapper>

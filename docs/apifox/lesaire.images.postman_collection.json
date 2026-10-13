@@ -1,0 +1,288 @@
+{
+  "info": {
+    "_postman_id": "a0ab82ed-dae4-4703-a55a-d5460937bd40",
+    "name": "莱赛尔餐饮服装定制—图片手动测试",
+    "description": "完整图片上传与公开读取流程。请单独导入并手动选择自己的JPG/PNG；上传会替换款式图片。环境变量使用同一份本地环境。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080",
+      "type": "string"
+    },
+    {
+      "key": "userUsername",
+      "value": "lesaire_demo",
+      "type": "string"
+    },
+    {
+      "key": "userPassword",
+      "value": "Lyocell123!",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "lesaire_admin",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123!",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otherUserToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "imageAdminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "RS-CF-001",
+      "type": "string"
+    },
+    {
+      "key": "fabricId",
+      "value": "LY-BL-002",
+      "type": "string"
+    },
+    {
+      "key": "colorId",
+      "value": "hex_193a5b",
+      "type": "string"
+    },
+    {
+      "key": "wrongColorId",
+      "value": "hex_f7f2e8",
+      "type": "string"
+    },
+    {
+      "key": "expectedTotal",
+      "value": "572",
+      "type": "string"
+    },
+    {
+      "key": "requestKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelRequestKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelOrderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderNumber",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrationPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrationPassword",
+      "value": "Apifox123!",
+      "type": "string"
+    },
+    {
+      "key": "styleCode",
+      "value": "RS-CF-001",
+      "type": "string"
+    },
+    {
+      "key": "imageUrl",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "款式图片：选择自己的文件后手动测试",
+      "item": [
+        {
+          "name": "图片01 管理员登录：保存 imageAdminToken",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "图片01 管理员登录：保存 imageAdminToken\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset('imageAdminToken');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "",
+                  "var data = pm.response.json();",
+                  "pm.test(\"返回 Bearer 类型\", function () { pm.expect(data.tokenType).to.equal('Bearer'); });",
+                  "pm.test(\"账号角色正确\", function () { pm.expect(data.account.role).to.equal(\"ADMIN\"); });",
+                  "pm.test('返回三段 JWT', function () { pm.expect(data.token).to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/); });",
+                  "if (pm.response.code === 200 && data.token) pm.environment.set('imageAdminToken', data.token);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "图片02 上传自选 JPG或PNG",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{imageAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/styles/{{styleCode}}/image",
+            "description": "需要手动在Body/form-data的file字段选择本机照片。会替换styleCode对应款式的图片地址。尺寸每边≤6000像素，总像素≤1200万。\n\n预期 HTTP 200。认证：Bearer {{imageAdminToken}}。",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "在Apifox里选择你的JPG/PNG文件，单张≤5MiB。不要手填multipart Content-Type。"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "var data = pm.response.json();",
+                  "pm.test('返回本地图片地址', function () { pm.expect(data.imageUrl).to.match(/^\\/uploads\\/styles\\//); });",
+                  "if (pm.response.code === 200) pm.environment.set('imageUrl', data.imageUrl);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "图片03 读取上传后的图片：无需 JWT",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}{{imageUrl}}",
+            "description": "执行图片02后自动保存imageUrl，本请求返回图片二进制。\n\n预期 HTTP 200。认证：无需登录或本用例刻意不提供有效令牌。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test('返回图片内容类型', function () { pm.expect(pm.response.headers.get('Content-Type')).to.match(/^image\\/(png|jpeg)/); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "图片04 管理员退出",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{imageAdminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "图片04 管理员退出\n\n预期 HTTP 200。认证：Bearer {{imageAdminToken}}。"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 状态为 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

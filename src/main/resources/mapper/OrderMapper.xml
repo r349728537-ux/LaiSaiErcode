@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 订单主表、明细和定制选项快照的 SQL 映射，写入顺序由业务事务协调。 -->
+<mapper namespace="com.lesaire.mapper.OrderMapper">
+  <!-- 主表字段映射保留数据库状态值，页面状态由实体统一转换。 -->
+  <resultMap id="Order" type="com.lesaire.pojo.CustomOrder">
+    <id property="id" column="id"/><result property="accountId" column="customer_id"/>
+    <result property="orderNumber" column="order_no"/><result property="storedStatus" column="status"/>
+    <result property="recipient" column="contact_name"/><result property="phone" column="contact_mobile"/>
+    <result property="address" column="delivery_address"/><result property="expectedDeliveryDate" column="expected_delivery_date"/>
+    <result property="totalAmount" column="total_amount"/><result property="note" column="customer_note"/>
+    <result property="createdAt" column="created_at"/><result property="updatedAt" column="updated_at"/>
+  </resultMap>
+  <sql id="OrderColumns">id,customer_id,order_no,status,contact_name,contact_mobile,delivery_address,expected_delivery_date,total_amount,customer_note,created_at,updated_at</sql>
+  <!-- 同时限定客户和稳定订单号，查找重复提交已创建的订单。 -->
+  <select id="findByNumber" resultMap="Order">SELECT <include refid="OrderColumns"/> FROM custom_order WHERE customer_id=#{accountId} AND order_no=#{orderNumber}</select>
+  <!-- 状态变更前锁定订单行，配合事务控制并发更新。 -->
+  <select id="findForUpdate" resultMap="Order">SELECT <include refid="OrderColumns"/> FROM custom_order WHERE id=#{id} FOR UPDATE</select>
+  <!-- 先对主表分页；普通用户带客户条件，管理员不带客户条件。 -->
+  <select id="findPage" resultMap="Order">
+    SELECT <include refid="OrderColumns"/> FROM custom_order
+    <where><if test="accountId != null">customer_id=#{accountId}</if></where>
+    ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}
+  </select>
+  <select id="count" resultType="long">SELECT COUNT(*) FROM custom_order <where><if test="accountId != null">customer_id=#{accountId}</if></where></select>
+  <!-- 明细联查使用独立列别名，避免与订单明细自身的 id 混淆。 -->
+  <resultMap id="JoinedStyle" type="com.lesaire.pojo.ShirtStyle">
+    <id property="id" column="style_ref_id"/><result property="code" column="style_code"/>
+    <result property="name" column="style_name"/><result property="scene" column="restaurant_scene"/>
+    <result property="collarType" column="collar_type"/><result property="sleeveType" column="sleeve_type"/>
+    <result property="basePrice" column="base_price"/>
+  </resultMap>
+  <!-- 把联查面料列映射到明细的关联面料对象。 -->
+  <resultMap id="JoinedFabric" type="com.lesaire.pojo.FabricMaterial">
+    <id property="id" column="fabric_ref_id"/><result property="code" column="fabric_code"/>
+    <result property="name" column="fabric_name"/><result property="composition" column="composition"/>
+    <result property="colorName" column="color_name"/><result property="colorHex" column="color_hex"/>
+    <result property="weight" column="weight_gsm"/><result property="surcharge" column="extra_price"/>
+  </resultMap>
+  <!-- 明细保留成交价与量体 JSON，TypeHandler 负责恢复精确小数。 -->
+  <resultMap id="Item" type="com.lesaire.pojo.OrderItem">
+    <id property="id" column="id"/><result property="orderId" column="order_id"/>
+    <result property="productName" column="product_name"/><result property="quantity" column="quantity"/>
+    <result property="unitPrice" column="unit_price"/><result property="amount" column="item_amount"/>
+    <result property="productionStatus" column="production_status"/><result property="createdAt" column="created_at"/>
+    <result property="measurementSnapshot" column="measurement_snapshot" typeHandler="com.lesaire.utils.MeasurementJsonTypeHandler"/>
+    <association property="style" resultMap="JoinedStyle" notNullColumn="style_ref_id"/>
+    <association property="fabric" resultMap="JoinedFabric" notNullColumn="fabric_ref_id"/>
+  </resultMap>
+  <!-- 按当前页订单 ID 批量读取明细；空列表使用 1=0，防止退化成全表查询。 -->
+  <select id="findItems" resultMap="Item">
+    SELECT i.id,i.order_id,i.product_name,i.quantity,i.unit_price,i.item_amount,i.measurement_snapshot,i.production_status,i.created_at,
+           s.id AS style_ref_id,s.style_code,s.style_name,s.restaurant_scene,s.collar_type,s.sleeve_type,s.base_price,
+           f.id AS fabric_ref_id,f.fabric_code,f.fabric_name,f.composition,f.color_name,f.color_hex,f.weight_gsm,f.extra_price
+    FROM custom_order_item i JOIN shirt_style s ON s.id=i.style_id JOIN fabric f ON f.id=i.fabric_id
+    WHERE <choose><when test="orderIds != null and orderIds.size() &gt; 0">i.order_id IN <foreach collection="orderIds" item="id" open="(" close=")" separator=",">#{id}</foreach></when><otherwise>1=0</otherwise></choose>
+    ORDER BY i.id
+  </select>
+  <!-- 映射下单时保存的选项名称、值和价格快照。 -->
+  <resultMap id="ItemOption" type="com.lesaire.pojo.OrderItemOption">
+    <id property="id" column="id"/><result property="orderItemId" column="order_item_id"/>
+    <result property="customizationOptionId" column="customization_option_id"/>
+    <result property="group" column="option_group_snapshot"/><result property="name" column="option_name_snapshot"/>
+    <result property="value" column="option_value_snapshot"/><result property="priceDelta" column="price_delta_snapshot"/>
+  </resultMap>
+  <!-- 一次批量读取当前明细的选项快照，空 ID 列表返回空结果。 -->
+  <select id="findOptions" resultMap="ItemOption">
+    SELECT id,order_item_id,customization_option_id,option_group_snapshot,option_name_snapshot,option_value_snapshot,price_delta_snapshot FROM order_item_option
+    WHERE <choose><when test="itemIds != null and itemIds.size() &gt; 0">order_item_id IN <foreach collection="itemIds" item="id" open="(" close=")" separator=",">#{id}</foreach></when><otherwise>1=0</otherwise></choose>
+    ORDER BY id
+  </select>
+  <!-- 先写主表并回填 id，后续明细通过该 id 关联订单。 -->
+  <insert id="insertOrder" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO custom_order(customer_id,order_no,status,contact_name,contact_mobile,delivery_address,expected_delivery_date,total_amount,customer_note,created_at,updated_at)
+    VALUES(#{accountId},#{orderNumber},#{storedStatus},#{recipient},#{phone},#{address},#{expectedDeliveryDate},#{totalAmount},#{note},#{createdAt},#{updatedAt})
+  </insert>
+  <!-- 写入成交价和量体快照，再回填明细 id 供选项快照关联。 -->
+  <insert id="insertItem" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO custom_order_item(order_id,style_id,fabric_id,product_name,quantity,unit_price,item_amount,measurement_snapshot,production_status,created_at)
+    VALUES(#{order.id},#{style.id},#{fabric.id},#{productName},#{quantity},#{unitPrice},#{amount},#{measurementSnapshot,typeHandler=com.lesaire.utils.MeasurementJsonTypeHandler,jdbcType=VARCHAR},#{productionStatus},#{createdAt})
+  </insert>
+  <!-- 复制选项内容及加价，保证历史选项价格不随目录调整。 -->
+  <insert id="insertOption" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO order_item_option(order_item_id,customization_option_id,option_group_snapshot,option_name_snapshot,option_value_snapshot,price_delta_snapshot)
+    VALUES(#{item.id},#{option.id},#{group},#{name},#{value},#{priceDelta})
+  </insert>
+  <!-- 附带 expected 原状态条件；更新行数不为 1 时业务层返回冲突。 -->
+  <update id="updateStatus">UPDATE custom_order SET status=#{next},updated_at=#{updatedAt} WHERE id=#{id} AND status=#{expected}</update>
+  <!-- 与主表状态更新处在同一事务内，同步该订单下全部明细的制作状态。 -->
+  <update id="updateProduction">UPDATE custom_order_item SET production_status=#{status} WHERE order_id=#{orderId}</update>
+</mapper>

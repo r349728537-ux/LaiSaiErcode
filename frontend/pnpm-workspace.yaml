@@ -1,0 +1,5 @@
+# 前端依赖构建相关设置，声明 esbuild 的安装构建规则。
+allowBuilds:
+  esbuild: set this to true or false
+onlyBuiltDependencies:
+  - esbuild
