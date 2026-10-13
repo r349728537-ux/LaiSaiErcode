@@ -49,4 +49,7 @@ public class AccountController {
     @PutMapping("/account/measurements") public AccountView measurements(@RequestAttribute("authenticatedAccount") Account account,@Valid @RequestBody Measurements request) {
         return accounts.update(account.getUsername(),request);
     }
+    public  void m() {
+        System.out.println("hello world");
+    }
 }
